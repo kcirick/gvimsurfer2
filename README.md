@@ -7,20 +7,20 @@ A Web browser that looks and works like gVim (using webkit2gtk)
   - Features/functions first inspired by jumanji and vimprobable
   - organized in a way that makes sense
   - Requires following as dependencies:
-   - gtk+-3
-   - webkit2gtk
+    - gtk+-3
+    - webkit2gtk
   - All configuration is stored under $HOME/.config/gvimsurfer2 (run the setup script to create it - See installation section below)
 
 ## Features:
 
   - Look and feel:
-   - Customize statusbar colours, completion colours and browser font
+    - Customize statusbar colours, completion colours and browser font
   - Navigate using keyboard
-   - Tab completion for URI (bookmarks and history), commands and settings
+    - Tab completion for URI (bookmarks and history), commands and settings
   - Search engines
-   - Can define multiple search engines through config file to search the web
+    - Can define multiple search engines through config file to search the web
   - Bookmarks
-   - Store bookmarks (with tags) for future reference
+    - Store bookmarks (with tags) for future reference
 
 ## Installation:
 
@@ -39,9 +39,9 @@ A Web browser that looks and works like gVim (using webkit2gtk)
 
 ## Version Log:
 
-  - 0.1 (2020-04-13) (<a href='https://github.com/kcirick/gvimsurfer2/archive/0.1.zip'>download .zip</a>): 
-   - A working web browser
-   - First port from gVimSurfer (webkit1/gtk2 version)
+  - 0.1 (2020-04-13) (<a href='https://github.com/kcirick/gvimsurfer2/archive/v0.1.zip'>download .zip</a>): 
+    - A working web browser
+    - First port from gVimSurfer (webkit1/gtk2 version)
 
 ## To do / Known issues:
 
