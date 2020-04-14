@@ -1,0 +1,34 @@
+#inputbar {
+   background-color: #222222;
+   color: #FFFFFF;
+   border-style: solid;
+   outline-style: none;
+   padding: 0;
+   box-shadow: none;
+}
+
+#statusbar {
+   background-color: #222222;
+   color: #FFFFFF;
+   padding-top: 1px;
+   padding-bottom: 1px;
+}
+
+/* checked means SSL flag */
+#statusbar:checked {
+   color: #33FF00;
+}
+
+#cc_row {
+   background-color: #DDDDDD;
+   color: #222222;
+}
+
+#cc_row:selected {
+   background-color: #99CCFF;
+   color: #222222;
+}
+
+#cc_separator {
+   background-color: #222222;
+}

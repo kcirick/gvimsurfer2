@@ -1,0 +1,44 @@
+#------------------------------------#
+#-- gVimSurfer2 configuration file --#
+#------------------------------------#
+
+#--- Appearance -----
+# now using CSS. See ui_css file defined under "Directories and files" 
+
+#--- Browser settings -----
+full_content_zoom = false
+flash_block       = true
+show_statusbar    = true
+show_tabbar       = true 
+#strict_ssl = false will accept any SSL certificate at face value
+strict_ssl        = false
+
+default_width        = 800
+default_height       = 600
+max_title_length     = 25
+max_url_length       = 50
+n_completion_items   = 15
+history_limit        = 50
+zoom_step            = 10
+scroll_step          = 40
+
+user_agent        = Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36
+home_page         = about:blank
+external_editor   = gvim
+
+#--- Directories and files -----
+download_dir   = ~/Downloads/
+config_dir     = ~/.config/gvimsurfer2/
+bookmarks      = bookmarks
+history        = history
+cookies        = cookies
+sessions       = sessions
+stylesheet     = style.css
+scriptfile     = script.js
+ui_css         = ui.css
+
+#--- Search engines -----
+search_engine  = google http://google.com/search?q=%s
+search_engine  = wiki http://wikipedia.org/wiki/%s
+search_engine  = duck http://duckduckgo.com/q=%s&t=gvimsurfer
+search_engine  = maps http://maps.google.com/?q=%s
