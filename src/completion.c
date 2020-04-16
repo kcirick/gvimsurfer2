@@ -138,6 +138,8 @@ Completion* cc_commands(gchar* input) {
 Completion* cc_open(gchar* input) {
    Completion* completion = completion_init();
 
+   gchar* lowercase_input = g_utf8_strdown(input, -1);
+
    //--- search engines -----
    if(Client.search_engines){
       CompletionGroup* search_engines = cg_create("Search Engines");
@@ -151,8 +153,25 @@ Completion* cc_open(gchar* input) {
       }
    }
 
-   // make bookmark completion case insensitive
-   gchar* lowercase_input = g_utf8_strdown(input, -1);
+   //--- quickmarks -----
+   if(Client.bookmarks) {
+      CompletionGroup* quickmarks = cg_create("Quickmarks");
+      completion->groups = g_list_append(completion->groups, quickmarks);
+
+      for(GList* l = Client.quickmarks; l; l = g_list_next(l)) {
+         QMark* qmark = (QMark*) l->data;
+         gchar* lowercase_id = g_strdup_printf("%d", qmark->id);
+         gchar* lowercase_uri = g_utf8_strdown(qmark->uri, -1);
+         gchar* new_uri = shorten_text(qmark->uri, max_url_length);
+
+         if(strstr(lowercase_uri, lowercase_input) || strstr(lowercase_id, lowercase_input))
+            cg_add_element(quickmarks, qmark->uri, new_uri, lowercase_id);
+
+         g_free(lowercase_uri); 
+         g_free(new_uri);
+         if(strlen(lowercase_id)) g_free(lowercase_id);
+      }
+   }
 
    //--- bookmarks -----
    if(Client.bookmarks) {
@@ -191,6 +210,69 @@ Completion* cc_open(gchar* input) {
 
          g_free(lowercase_uri);
          g_free(new_uri);
+      }
+   }
+
+   g_free(lowercase_input);
+
+   return completion;
+}
+
+Completion* cc_bookmarks(gchar* input) {
+   Completion* completion = completion_init();
+
+   // make bookmark completion case insensitive
+   gchar* lowercase_input = g_utf8_strdown(input, -1);
+
+   //--- bookmarks -----
+   if(Client.bookmarks) {
+      CompletionGroup* bookmarks = cg_create("Bookmarks");
+      completion->groups = g_list_append(completion->groups, bookmarks);
+
+      for(GList* l = Client.bookmarks; l; l = g_list_next(l)) {
+         BMark* bmark = (BMark*) l->data;
+         gchar* lowercase_uri = g_utf8_strdown(bmark->uri, -1);
+         gchar* lowercase_tags = bmark->tags? g_utf8_strdown(bmark->tags, -1) : "";
+
+         gchar* new_uri = shorten_text(bmark->uri, max_url_length);
+
+         if(strstr(lowercase_uri, lowercase_input) || strstr(lowercase_tags, lowercase_input))
+            cg_add_element(bookmarks, bmark->uri, new_uri, bmark->tags);
+
+         g_free(lowercase_uri); 
+         g_free(new_uri);
+         if(strlen(lowercase_tags)) g_free(lowercase_tags);
+      }
+   }
+
+   g_free(lowercase_input);
+
+   return completion;
+}
+
+Completion* cc_quickmarks(gchar* input) {
+   Completion* completion = completion_init();
+
+   // make bookmark completion case insensitive
+   gchar* lowercase_input = g_utf8_strdown(input, -1);
+
+   //--- quickmarks -----
+   if(Client.bookmarks) {
+      CompletionGroup* quickmarks = cg_create("Quickmarks");
+      completion->groups = g_list_append(completion->groups, quickmarks);
+
+      for(GList* l = Client.quickmarks; l; l = g_list_next(l)) {
+         QMark* qmark = (QMark*) l->data;
+         gchar* lowercase_id = g_strdup_printf("%d", qmark->id);
+         gchar* lowercase_uri = g_utf8_strdown(qmark->uri, -1);
+         gchar* new_uri = shorten_text(qmark->uri, max_url_length);
+
+         if(strstr(lowercase_uri, lowercase_input) || strstr(lowercase_id, lowercase_input))
+            cg_add_element(quickmarks, lowercase_id, lowercase_id, new_uri);
+
+         g_free(lowercase_uri); 
+         g_free(new_uri);
+         if(strlen(lowercase_id)) g_free(lowercase_id);
       }
    }
 
@@ -280,8 +362,8 @@ void run_completion(gint arg) {
    // get current information
    gchar **entries = g_strsplit_set(input_m, " ", -1);
    gint  n_entries = g_strv_length(entries);
-   gboolean is_command = n_entries==1;
 
+   gboolean is_command = n_entries==1;
    gchar* new_command   = entries[0];
    gchar* new_parameter = is_command ? NULL : g_strdup(entries[n_entries-1]);
 

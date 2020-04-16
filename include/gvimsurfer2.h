@@ -32,6 +32,11 @@ typedef struct {
    gchar* tags;
 } BMark;
 
+typedef struct {
+   gint     id;
+   gchar*   uri;
+} QMark;
+
 //--- variables -----
 gboolean private_mode;
 
@@ -49,7 +54,6 @@ gboolean strict_ssl;
 
 gchar* user_agent;
 gchar* home_page;
-gchar* external_editor;
 
 gint n_completion_items;
 gint history_limit;
@@ -74,5 +78,6 @@ void change_mode(gint mode);
 void search_and_highlight(gboolean, gchar*);
 void new_window(const gchar*);
 gchar* shorten_text(gchar*, gint);
+gint get_int_from_buffer(gchar*);
 
 #endif

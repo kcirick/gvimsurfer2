@@ -16,9 +16,6 @@ void sc_abort(Argument* argument){
    // Stop loading website
    cmd_stop(0, NULL);
 
-   // Set back to normal mode
-   change_mode(NORMAL);
-
    // Hide inputbar
    clear_inputbar();
 
@@ -27,7 +24,8 @@ void sc_abort(Argument* argument){
 
    // reset the statubar message fg colour 
    //gtk_widget_modify_fg(GTK_WIDGET(Client.Statusbar.message), GTK_STATE_NORMAL, &(Client.Style.statusbar_fg));
-   gtk_widget_grab_focus(GTK_WIDGET(GET_CURRENT_PAGE()));
+   //gtk_widget_grab_focus(GTK_WIDGET(GET_CURRENT_PAGE()));
+   gtk_widget_grab_focus(GTK_WIDGET(Client.UI.window));
 
 }
 
@@ -64,3 +62,53 @@ void sc_focus_inputbar(Argument* argument) {
 void sc_search(Argument* argument) {
    search_and_highlight(argument->b, argument->data);
 }
+
+void sc_go_home(Argument* argument) {
+   open_uri((WebKitWebView*)GET_CURRENT_PAGE(), home_page);
+}
+
+void sc_quickmark(Argument* argument) {
+   say(DEBUG, "sc_quickmark", -1);
+   gint id = argument->i;
+   if(!id) id = get_int_from_buffer(Client.buffer->str);
+
+   for(GList* list = Client.quickmarks; list; list = g_list_next(list)) {
+      QMark* qmark = (QMark*) list->data;
+
+      if(qmark->id == id) {
+         open_uri((WebKitWebView*)GET_CURRENT_PAGE(), qmark->uri);
+         return;
+      }
+   }
+}
+
+void sc_copy_uri(Argument* argument) {
+   gchar* uri = (gchar*) webkit_web_view_get_uri((WebKitWebView*)GET_CURRENT_PAGE());
+   gtk_clipboard_set_text(gtk_clipboard_get(GDK_SELECTION_PRIMARY), uri, -1);
+
+   notify(INFO, g_strdup_printf("Copied %s", shorten_text(uri, max_url_length)));
+}
+
+void sc_navigate(Argument* argument) {
+   if(argument->b == FORWARD)
+      webkit_web_view_go_forward((WebKitWebView*)GET_CURRENT_PAGE());
+   else
+      webkit_web_view_go_back((WebKitWebView*)GET_CURRENT_PAGE());
+   
+   gtk_widget_grab_focus(GTK_WIDGET(GET_CURRENT_PAGE()));
+}
+
+void sc_navigate_tabs(Argument* argument) {
+   gint current_tab     = gtk_notebook_get_current_page(Client.UI.notebook);
+   gint number_of_tabs  = gtk_notebook_get_n_pages(Client.UI.notebook);
+   gint step            = argument->i==PREVIOUS ? -1 : 1;
+
+   gint new_tab = (current_tab + step) % number_of_tabs;
+
+   gtk_notebook_set_current_page(Client.UI.notebook, new_tab);
+   gtk_widget_grab_focus(GTK_WIDGET(GET_CURRENT_PAGE()));
+
+   update_client(new_tab);
+}
+
+

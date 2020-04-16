@@ -5,10 +5,9 @@ static const Command commands[] = {
    // command,    function,               completion,       description
    {"back",       cmd_back,               0 },              // Go back in history
    {"forward",    cmd_forward,            0 },              // Go forward in history
-   {"bmark",      cmd_bookmark,           0 },              // Add bookmark
+   {"bmark",      cmd_bookmark,           cc_bookmarks},    // Add bookmark
 //  {"download",  cmd_handle_downloads,   cc_downloads},    // List (or cancel) active downloads
-//  {"qmark",     cmd_quickmark,          0 },              // Set quickmark
-//  {"pmark",     cmd_pagemark,           0 },              // Set pagemark
+   {"qmark",      cmd_quickmark,          cc_quickmarks},   // Set quickmark
    {"open",       cmd_open,               cc_open },        // Open URI in current tab
 //  {"print",     cmd_print,              0 },              // Print page
    {"close",      cmd_close,              0 },              // Close current tab

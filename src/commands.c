@@ -8,6 +8,7 @@
 #include "include/client.h"
 #include "include/completion.h"
 #include "include/commands.h"
+#include "include/shortcuts.h"
 
 gboolean cmd_back(int argc, char** argv) {
    //gint increment = argc==0 ? 1 : atoi(argv[0]);
@@ -67,10 +68,10 @@ gboolean cmd_closeall(int argc, char** argv) {
    g_list_free(Client.search_engines);
 
    // clean quickmarks
-   //for(GList* list = Client.Global.quickmarks; list; list = g_list_next(list))
-   //   free(list->data);
+   for(GList* list = Client.quickmarks; list; list = g_list_next(list))
+      free(list->data);
 
-   //g_list_free(Client.Global.quickmarks);
+   g_list_free(Client.quickmarks);
    
    // quit application
    gtk_main_quit();
@@ -102,12 +103,9 @@ gboolean cmd_stop(int argc, char** argv) {
    return TRUE;
 }
 
-
 gboolean cmd_tabopen(int argc, char** argv) {
-   if(argc == 0)           return TRUE;
-   //if(argv[argc] != NULL)  return TRUE;
+   gchar* uri = (argc==0 || strlen(argv[0])==0) ? g_strdup(home_page) : g_strjoinv(" ", argv);
 
-   gchar* uri = g_strjoinv(" ", argv);
    if(strlen(uri)>0)
       create_tab(uri, FALSE);
 
@@ -117,9 +115,8 @@ gboolean cmd_tabopen(int argc, char** argv) {
 }
 
 gboolean cmd_winopen(int argc, char** argv) {
-   if(argc == 0)   return TRUE;
+   gchar* uri = (argc==0 || strlen(argv[0])==0) ? g_strdup(home_page) : g_strjoinv(" ", argv);
 
-   gchar* uri = g_strjoinv(" ", argv);
    if(strlen(uri)>0)
       new_window(uri);
 
@@ -129,27 +126,84 @@ gboolean cmd_winopen(int argc, char** argv) {
 }
 
 gboolean cmd_bookmark(int argc, char** argv) {
-   gchar* this_uri = g_strdup(webkit_web_view_get_uri((WebKitWebView*)GET_CURRENT_PAGE()));
+   if(argc<1) return FALSE;
 
-   // Verify that the bookmark isn't already in the list
-   for(GList* l = Client.bookmarks; l; l = g_list_next(l)) {
-      BMark *this_bmark = (BMark*) l->data;
-      if(!g_strcmp0(this_uri, this_bmark->uri)) return TRUE;
+   if(!g_strcmp0(argv[0], "set")){
+      
+      gchar* this_uri = g_strdup(webkit_web_view_get_uri((WebKitWebView*)GET_CURRENT_PAGE()));
+
+      // Verify that the bookmark isn't already in the list
+      for(GList* l = Client.bookmarks; l; l = g_list_next(l)) {
+         BMark *this_bmark = (BMark*) l->data;
+         if(!g_strcmp0(this_uri, this_bmark->uri)) return TRUE;
+      }
+
+      BMark* new_bmark = malloc(sizeof(BMark));
+      gchar* tags = "";
+      if(argc > 1 && argv[argc] == NULL)
+         tags = g_strjoinv(" ", ++argv);
+      new_bmark -> uri = g_strdup(this_uri);
+      new_bmark -> tags = g_strdup(tags);
+   
+      Client.bookmarks = g_list_append(Client.bookmarks, new_bmark);
+      if(strlen(this_uri)>0)   g_free(this_uri); 
+      if(strlen(tags)>0)       g_free(tags);
+      
+      return TRUE;
+   } else
+   if (!g_strcmp0(argv[0], "open")) {
+      if (argc>1)
+         cmd_open(--argc, ++argv);
+      else
+         run_completion(NEXT);
+      
+      return TRUE;
    }
 
-   BMark* new_bmark = malloc(sizeof(BMark));
-   gchar* tags = "";
-   if(argc >= 1 && argv[argc] == NULL)
-      tags = g_strjoinv(" ", argv);
-   new_bmark -> uri = g_strdup(this_uri);
-   new_bmark -> tags = g_strdup(tags);
-   
-   Client.bookmarks = g_list_append(Client.bookmarks, new_bmark);
-   if(strlen(this_uri)>0)   g_free(this_uri); 
-   if(strlen(tags)>0)       g_free(tags);
-
-   return TRUE;
+   return FALSE;
 }
+
+gboolean cmd_quickmark(int argc, char** argv){
+   if(argc<1) return FALSE;
+
+   gint id = atoi(argv[1]);
+
+   if(!g_strcmp0(argv[0], "set")){
+      gchar* this_uri = g_strdup(webkit_web_view_get_uri((WebKitWebView*)GET_CURRENT_PAGE()));
+      
+      // search if entry already exists
+      for(GList* list = Client.quickmarks; list; list = g_list_next(list)){
+         QMark* qmark = (QMark*) list->data;   
+
+         if(qmark->id == id){
+            qmark->uri = this_uri;
+            return TRUE;
+         }
+      }
+
+      // add new qmark
+      QMark* qmark = malloc(sizeof(QMark));
+      qmark-> id   = id;
+      qmark-> uri  = g_strdup(this_uri);
+
+      Client.quickmarks = g_list_append(Client.quickmarks, qmark);
+      g_free(this_uri);
+   
+      return TRUE;
+   } else
+   if(!g_strcmp0(argv[0], "open")) {
+      if (argc>1){
+         Argument arg = {.i = id};
+         sc_quickmark(&arg);
+      } else
+         run_completion(NEXT);
+
+      return TRUE;
+   }
+
+   return FALSE;
+}
+
 
 gboolean cmd_write(int argc, char** argv) {
    // save bookmarks

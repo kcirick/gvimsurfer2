@@ -59,7 +59,9 @@ void init_client() {
    Client.Statusbar.message   = GTK_LABEL(gtk_label_new(NULL));
    Client.Statusbar.uri       = GTK_LABEL(gtk_label_new(NULL));
    Client.Statusbar.info      = GTK_LABEL(gtk_label_new(NULL));
-   gtk_widget_set_name(GTK_WIDGET(Client.Statusbar.uri), "statusbar");
+   gtk_widget_set_name(GTK_WIDGET(Client.Statusbar.message), "message");
+   gtk_widget_set_name(GTK_WIDGET(Client.Statusbar.uri), "uri");
+   gtk_widget_set_name(GTK_WIDGET(Client.Statusbar.info), "info");
 
    gtk_label_set_xalign(Client.Statusbar.message, 0.0);
    gtk_label_set_xalign(Client.Statusbar.uri, 1.0);
@@ -181,21 +183,10 @@ GtkWidget* create_notebook_label(const gchar *text, GtkWidget *notebook, gint pa
 
 void close_tab(gint tab_id) {
 
-   //Page* page = get_current_page();
-   //for(GList* list = page->pagemarks; list; list = g_list_next(list))
-   //   free(list->data);
-   //g_list_free(page->pagemarks);
-
-   //Client.Global.pages = g_list_remove(Client.Global.pages, page);
-   //g_free(page);
-
    //Client.Global.last_closed = g_strdup((gchar *) webkit_web_view_get_uri(GET_CURRENT_TAB()));
 
-   // Note: Last tab is always "addtab" button
    if (gtk_notebook_get_n_pages(Client.UI.notebook) > 1) {
       gtk_notebook_remove_page(Client.UI.notebook, tab_id);
-      //if(tab_id == gtk_notebook_get_n_pages(Client.UI.notebook)-1)
-      //   gtk_notebook_set_current_page(Client.UI.notebook, tab_id-1);
 
       update_client(gtk_notebook_get_current_page(Client.UI.notebook));
    } else 
@@ -215,7 +206,8 @@ void update_client(gint tab_id){
 
       const gchar* tab_title = webkit_web_view_get_title(this_wv);
       int progress = webkit_web_view_get_estimated_load_progress(this_wv) * 100;
-      gchar* n_tab_title = g_strdup_printf("%d: %s", tc + 1, tab_title ? tab_title : ((progress == 100) ? "Loading..." : "(Untitled)"));
+      //gchar* n_tab_title = g_strdup_printf("%d: %s", tc + 1, tab_title ? tab_title : ((progress == 100) ? "Loading..." : "(Untitled)"));
+      gchar* n_tab_title = g_strdup_printf("%s", tab_title ? tab_title : ((progress == 100) ? "(Untitled)" : "Loading..."));
       
       // shorten title if needed
       gchar* new_tab_title = shorten_text(n_tab_title, max_title_length);
@@ -329,7 +321,6 @@ void clear_inputbar() {
 }
 
 void set_inputbar_visibility(gint visibility) {
-   say(DEBUG, "set_inputbar_visibility", -1);
    gboolean is_visible = gtk_widget_get_visible(GTK_WIDGET(Client.UI.inputbar));
 
    if(visibility==HIDE || (visibility==TOGGLE && is_visible)){

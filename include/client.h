@@ -19,11 +19,13 @@ struct {
    } Statusbar;
 
    GdkKeymap            *keymap;
+   GString              *buffer;
    gint                 mode;
    GList                *search_engines;
    WebKitFindController *finder;
    gchar                *search_token;
    GList                *bookmarks;
+   GList                *quickmarks;
    GList                *history;
 
 } Client;

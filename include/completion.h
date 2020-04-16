@@ -24,6 +24,8 @@ typedef struct {
 
 // Completion Command
 Completion*       cc_commands(gchar*);
+Completion*       cc_bookmarks(gchar*);
+Completion*       cc_quickmarks(gchar*);
 Completion*       cc_open(gchar*);
 //Completion*       cc_session(gchar*);
 //Completion*       cc_settings(gchar*);

@@ -16,7 +16,7 @@ gboolean cmd_open(int, char**);
 //gboolean cmd_settings(int, char**);
 //gboolean cmd_pagemark(int, char**);
 //gboolean cmd_print(int, char**);
-//gboolean cmd_quickmark(int, char**);
+gboolean cmd_quickmark(int, char**);
 gboolean cmd_close(int, char**);
 gboolean cmd_closeall(int, char**);
 gboolean cmd_reload(int, char**);

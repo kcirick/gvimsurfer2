@@ -1,7 +1,3 @@
-/*
- * src/main.c: Main code
- */
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,10 +7,10 @@
 
 #include "include/gvimsurfer2.h"
 #include "include/client.h"
-//#include "include/utilities.h"
 
-//--- Local variable -----
+//--- Local variables -----
 static const gchar default_config_file[] = ".config/gvimsurfer2/configrc";
+gboolean mode_debug;
 
 #define CRED     "\x1b[31m"
 #define CGREEN   "\x1b[32m"
@@ -48,12 +44,28 @@ gchar* shorten_text(gchar* orig, gint max_length){
    return new_text;
 }
 
+gint get_int_from_buffer(gchar* buffer){
+
+   gint digit_end = 0;
+   while(g_ascii_isdigit(buffer[digit_end]))
+      digit_end = digit_end + 1;
+
+   gchar* number = g_strndup(buffer, digit_end);
+   gint id = atoi(number);
+   g_free(number);
+
+   return id;
+}
+
+
 void say(gint level, gchar* message, gint exit_type) {
    gchar* coloured_type;
         if(level==ERROR)   coloured_type=g_strdup(CRED "ERROR" CRESET);
    else if(level==WARNING) coloured_type=g_strdup(CYELLOW "WARNING" CRESET);
    else if(level==DEBUG)   coloured_type=g_strdup(CPURPLE "DEBUG" CRESET);
    else                    coloured_type=g_strdup(CGREEN "INFO" CRESET);
+
+   if(level==DEBUG && !mode_debug) return;
 
    g_printf("%s [%s]:\t%s\n", NAME, coloured_type, message);
 
@@ -62,14 +74,15 @@ void say(gint level, gchar* message, gint exit_type) {
 }
 
 void notify(gint level, char* message) {
+   say(DEBUG, "notify", -1);
+
    gboolean output_stderr = FALSE;
    if(level==DEBUG) output_stderr=TRUE;
 
    if(Client.UI.window && !output_stderr){
-      //if(level==ERROR || level==WARNING)
-         //gtk_widget_modify_fg(GTK_WIDGET(Client.Statusbar.message), GTK_STATE_NORMAL, &(Client.Style.notification_fg));
-      //else 
-      //   gtk_widget_modify_fg(GTK_WIDGET(Client.Statusbar.message), GTK_STATE_NORMAL, &(Client.Style.statusbar_fg));
+      (level==ERROR || level==WARNING) ?
+         gtk_widget_set_state_flags (GTK_WIDGET(Client.Statusbar.message), GTK_STATE_FLAG_CHECKED, TRUE) :
+         gtk_widget_set_state_flags (GTK_WIDGET(Client.Statusbar.message), GTK_STATE_FLAG_NORMAL, TRUE); 
 
       gtk_label_set_text((GtkLabel*) Client.Statusbar.message, message);
    } else 
@@ -106,6 +119,7 @@ void open_uri(WebKitWebView* wv, const gchar* uri){
       }
 
       if(!matched){
+         // If not matched, use the default search engine
          notify(WARNING, g_strdup_printf("Search engine %s doesn't exist", args[0]));
          se = (SearchEngine*)Client.search_engines->data;
          uri = g_strjoinv(" ", args);
@@ -122,8 +136,6 @@ void open_uri(WebKitWebView* wv, const gchar* uri){
 }
 
 void new_window(const gchar* uri) {
-   say(DEBUG, "new_window", -1);
-
    if(!uri) return;
 
    gchar* nargv[3] = { TARGET, (gchar*)uri, NULL };
@@ -162,6 +174,7 @@ void search_and_highlight(gboolean direction, gchar* token) {
 }
 
 void change_mode(gint mode) {
+   say(DEBUG, "change_mode", -1);
    gchar* mode_text = NULL;
 
    switch(mode) {
@@ -217,7 +230,6 @@ gboolean read_configuration(gchar* configrc) {
 
       if(!strcmp(id, "home_page"))        home_page = value;
       if(!strcmp(id, "user_agent"))       user_agent = value;
-      if(!strcmp(id, "external_editor"))  external_editor = value;
 
       if(!strcmp(id, "n_completion_items"))    n_completion_items = atoi(value);
       if(!strcmp(id, "history_limit"))         history_limit = atoi(value);
@@ -267,6 +279,7 @@ int main(int argc, char* argv[]) {
       { "version",      'v', 0, G_OPTION_ARG_NONE, &version, "Print version", NULL },
       { "configfile",   'c', 0, G_OPTION_ARG_STRING, &cfile, "Specify config file", NULL },
       { "private",      'p', 0, G_OPTION_ARG_NONE, &private, "Open in private mode", NULL },
+      { "debug",        'd', 0, G_OPTION_ARG_NONE, &mode_debug, "Set debug mode", NULL },
       { NULL } };
 
    if (!gtk_init_with_args(&argc, &argv, "[URL1 URL2 ...]", opts, NULL, &err))
