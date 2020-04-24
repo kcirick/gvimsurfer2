@@ -30,6 +30,13 @@ void init_client() {
    // setup signals
    g_signal_connect(Client.UI.window, "destroy",   G_CALLBACK(cb_destroy), NULL);
 
+   // set up webextension
+   WebKitWebContext* wc = webkit_web_context_get_default();
+   webkit_web_context_set_process_model(wc, WEBKIT_PROCESS_MODEL_MULTIPLE_SECONDARY_PROCESSES);
+   webkit_web_context_set_cache_model(wc, WEBKIT_CACHE_MODEL_WEB_BROWSER);
+   
+   g_signal_connect(wc, "initialize-web-extensions", G_CALLBACK(cb_wc_init_webext), NULL);
+
    //--- set up CSS UI provider ---
    Client.UI.style_provider   = gtk_css_provider_new();
    GError *error = 0;
@@ -133,6 +140,33 @@ void init_client_data() {
          g_strfreev(lines);
       }
    }
+
+   // read sessions
+   if(g_file_test(sessions, G_FILE_TEST_IS_REGULAR)) {
+      gchar* content = NULL;
+
+      if(g_file_get_contents(sessions, &content, NULL, NULL)) {
+         gchar **lines = g_strsplit(content, "\n", -1);
+         gint    n     = g_strv_length(lines) - 1;
+
+         for(gint i=0; i<n; i+=2) {
+            if(!strlen(lines[i]) || !strlen(lines[i+1]))  continue;
+
+            Session* se = malloc(sizeof(Session));
+            se->name = g_strdup(lines[i]);
+            se->uris = g_strdup(lines[i+1]);
+
+            Client.sessions = g_list_prepend(Client.sessions, se);
+         }
+         g_free(content);
+         g_strfreev(lines);
+      }
+   }
+
+   // init scroll state
+   Client.ScrollState.max = 0;
+   Client.ScrollState.top = 0;
+   Client.ScrollState.percent = 0;
 }
 
 GtkWidget* create_tab(const gchar* uri, gboolean background) {
@@ -149,8 +183,16 @@ GtkWidget* create_tab(const gchar* uri, gboolean background) {
 
    //--- connect webview callbacks ---
    g_object_connect(G_OBJECT(wv),
-      "signal::load-changed",          G_CALLBACK(cb_wv_load_status),   NULL,
+      "signal::create",                G_CALLBACK(cb_wv_create_webview),   NULL,
+      "signal::load-changed",          G_CALLBACK(cb_wv_load_status),      NULL,
+      //"signal::notify::title",         G_CALLBACK(cb_wv_notify_title),     NULL,
+      "signal::notify::estimated-load-progress", G_CALLBACK(cb_wv_update), NULL,
       NULL);
+
+   //--- Download signal
+   WebKitWebContext* wc = webkit_web_view_get_context(wv);
+   g_signal_connect(wc, "download-started", G_CALLBACK(cb_wc_download_started), NULL);
+
 
    // open URI
    open_uri(WEBKIT_WEB_VIEW(wv), uri);
@@ -288,22 +330,16 @@ void update_statusbar_info(gint tab_id) {
       */
    }
 
-   /*
    // update position
-   GtkAdjustment* adjustment = gtk_scrolled_window_get_vadjustment(this_tab);
-   gdouble view_size         = gtk_adjustment_get_page_size(adjustment);
-   gdouble value             = gtk_adjustment_get_value(adjustment);
-   gdouble max               = gtk_adjustment_get_upper(adjustment) - view_size;
-
    gchar* position;
-   if(max == 0)            position = g_strdup("All");
-   else if(value == max)   position = g_strdup("Bot");
-   else if(value == 0)     position = g_strdup("Top");
+   if(Client.ScrollState.max == 0)            position = g_strdup("All");
+   else if(Client.ScrollState.percent == 100) position = g_strdup("Bot");
+   else if(Client.ScrollState.percent == 0)   position = g_strdup("Top");
    else
-      position = g_strdup_printf("%2d%%", (int) ceil(((value / max) * 100)));
+      position = g_strdup_printf("%d%%", Client.ScrollState.percent);
 
    g_string_append_printf(status, "%s", position);
-   */
+   
    gtk_label_set_text((GtkLabel*) Client.Statusbar.info, status->str);
 
    g_string_free(status, TRUE);
@@ -325,10 +361,7 @@ void set_inputbar_visibility(gint visibility) {
 
    if(visibility==HIDE || (visibility==TOGGLE && is_visible)){
       gtk_widget_hide(GTK_WIDGET(Client.UI.inputbar));
-      //if(show_statusbar)
-         gtk_widget_show(GTK_WIDGET(Client.UI.statusbar));
-      //else
-      //   gtk_widget_hide(GTK_WIDGET(Client.UI.statusbar));
+      gtk_widget_show(GTK_WIDGET(Client.UI.statusbar));
    }else if(visibility==SHOW || (visibility==TOGGLE && !is_visible)){
       gtk_widget_show(GTK_WIDGET(Client.UI.inputbar));
       gtk_widget_hide(GTK_WIDGET(Client.UI.statusbar));

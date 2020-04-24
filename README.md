@@ -23,6 +23,9 @@ A Web browser that looks and works like gVim (using webkit2gtk)
     - Store bookmarks (with tags) for future reference
   - Quickmarks (NEW)
     - Quickly mark a webpage you want to come back to. Not stored after the browser is closed
+  - Sessions (NEW)
+    - Save and load sessions (collections of tabs)
+    - Last session is automatically saved
 
 ## Installation:
 
@@ -47,6 +50,9 @@ A Web browser that looks and works like gVim (using webkit2gtk)
     - Remove reference to external editor. Also remove code to view source
     - Remove tab number from title. Irrelevant information
     - Add debug mode to see debug message 
+    - Backspace on buffer does what it's supposed to
+    - Adding WebExtension support (needed for scrolling etc)
+
   - 0.1 (2020-04-13) (<a href='https://github.com/kcirick/gvimsurfer2/archive/v0.1.zip'>download .zip</a>): 
     - A working web browser
     - First port from gVimSurfer (webkit1/gtk2 version)

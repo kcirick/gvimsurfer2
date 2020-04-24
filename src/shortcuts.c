@@ -64,7 +64,8 @@ void sc_search(Argument* argument) {
 }
 
 void sc_go_home(Argument* argument) {
-   open_uri((WebKitWebView*)GET_CURRENT_PAGE(), home_page);
+   const gchar* uri = home_page;
+   open_uri((WebKitWebView*)GET_CURRENT_PAGE(), uri);
 }
 
 void sc_quickmark(Argument* argument) {

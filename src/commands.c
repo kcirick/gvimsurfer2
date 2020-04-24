@@ -44,6 +44,8 @@ gboolean cmd_close(int argc, char** argv) {
 
 gboolean cmd_closeall(int argc, char** argv) {
 
+   say(DEBUG, "cmd_closeall", -1);
+
    //pango_font_description_free(Client.Style.font);
 
    // write bookmarks and history
@@ -72,6 +74,15 @@ gboolean cmd_closeall(int argc, char** argv) {
       free(list->data);
 
    g_list_free(Client.quickmarks);
+   
+   // clean downloads 
+   for(GList* list = Client.active_downloads; list; list = g_list_next(list))
+      free(list->data);
+   for(GList* list = Client.finished_downloads; list; list = g_list_next(list))
+      free(list->data);
+
+   g_list_free(Client.active_downloads);
+   g_list_free(Client.finished_downloads);
    
    // quit application
    gtk_main_quit();
@@ -204,6 +215,45 @@ gboolean cmd_quickmark(int argc, char** argv){
    return FALSE;
 }
 
+gboolean cmd_handle_downloads(int argc, char** argv){
+   if(argc<1) return FALSE;
+
+   if(!g_strcmp0(argv[0], "list")){
+      run_completion(NEXT);
+      return TRUE;
+   }
+
+   gint which = atoi(argv[argc-1]);
+   WebKitDownload* this_download = (WebKitDownload*)g_list_nth_data(Client.active_downloads, which);
+   if(!this_download){
+      notify(WARNING, "No such download!");
+      return FALSE;
+   }
+
+   if(!g_strcmp0(argv[0], "cancel")){
+      webkit_download_cancel(this_download);
+
+      notify(INFO, "Download cancelled");
+   }
+
+   return TRUE;
+}
+
+gboolean cmd_session(int argc, char** argv) {
+   if(argc<=1 || argv[argc]!=NULL)  return FALSE;
+
+   gchar* session_name   = argv[1];
+   
+   gboolean to_return=FALSE;
+   if(strcmp(argv[0], "save")==0)
+      to_return = sessionsave(session_name);
+   else if(strcmp(argv[0], "load")==0)
+      to_return = sessionload(session_name);
+
+   g_free(session_name);
+
+   return to_return;
+}
 
 gboolean cmd_write(int argc, char** argv) {
    // save bookmarks
@@ -234,6 +284,24 @@ gboolean cmd_write(int argc, char** argv) {
    g_file_set_contents(history, history_list->str, -1, NULL);
 
    g_string_free(history_list, TRUE);
+
+   // save session
+   sessionsave("last_session");
+
+   GString* session_list = g_string_new("");
+   for(GList* se_list = Client.sessions; se_list; se_list = g_list_next(se_list)) {
+      Session* se = se_list->data;
+
+      gchar* session_lines = g_strconcat(se->name, "\n", se->uris, "\n", NULL);
+      session_list = g_string_append(session_list, session_lines);
+
+      g_free(session_lines);
+   }
+
+   g_file_set_contents(sessions, session_list->str, -1, NULL);
+
+   g_string_free(session_list, TRUE);
+
 
    return TRUE;
 }

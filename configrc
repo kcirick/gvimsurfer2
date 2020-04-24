@@ -8,7 +8,6 @@
 #--- Browser settings -----
 full_content_zoom = false
 flash_block       = true
-show_statusbar    = true
 show_tabbar       = true 
 #strict_ssl = false will accept any SSL certificate at face value
 strict_ssl        = false
@@ -26,8 +25,8 @@ user_agent        = Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like
 home_page         = about:blank
 
 #--- Directories and files -----
+#config_dir is always set to ~/.config/gvimsurfer2/
 download_dir   = ~/Downloads/
-config_dir     = ~/.config/gvimsurfer2/
 bookmarks      = bookmarks
 history        = history
 cookies        = cookies

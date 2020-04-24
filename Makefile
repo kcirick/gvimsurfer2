@@ -8,6 +8,11 @@ HDR		= $(wildcard include/*.h)
 OBJ  		= $(addprefix obj/,$(notdir $(SRC:.c=.o)))
 #CONFIG	= $(wildcard config/*.h)
 
+EXTTARGET      = webext.so
+EXTENSIONDIR   = $(PREFIX)/local/lib/gvimsurfer2
+EXTSRC         = $(wildcard webextension/*.c)
+EXTOBJ         = $(EXTSRC:.c=.lo)
+
 # libs
 GTK_INC = $(shell pkg-config --cflags gtk+-3.0 webkit2gtk-4.0 )
 GTK_LIB = $(shell pkg-config --libs gtk+-3.0 webkit2gtk-4.0 )
@@ -15,9 +20,13 @@ GTK_LIB = $(shell pkg-config --libs gtk+-3.0 webkit2gtk-4.0 )
 CC = gcc
 LFLAGS = -L/usr/lib -lc ${GTK_LIB} -lm
 CFLAGS = -std=c99 -pedantic -Wall -I. -I/usr/include ${GTK_INC}
-CFLAGS += -DVERSION=\"${VERSION}\" -D_XOPEN_SOURCE=600 -DTARGET=\"${TARGET}\" -DNAME=\"${NAME}\"
+CFLAGS += -DVERSION=\"${VERSION}\" -D_XOPEN_SOURCE=600 -DTARGET=\"${TARGET}\" -DNAME=\"${NAME}\" -DEXTENSIONDIR=\"${EXTENSIONDIR}\"
 
-all: ${TARGET}
+EXTCFLAGS   = ${GTK_INC} $(shell pkg-config --cflags webkit2gtk-web-extension-4.0)
+EXTLDFLAGS  = ${GTK_LIB} $(shell pkg-config --libs webkit2gtk-web-extension-4.0) -shared
+
+
+all: ${TARGET} ${EXTTARGET}
 
 obj/%.o : src/%.c
 	@if [ ! -d obj/ ]; then mkdir -p obj/; fi
@@ -30,11 +39,21 @@ ${TARGET} : ${OBJ}
 	@echo " LD " -o $@
 	@${CC} $^ ${LFLAGS} -o $@
 
+$(EXTTARGET) : ${EXTOBJ}
+	@echo " LD " -o $@
+	@${CC} $^ ${EXTLDFLAGS} -o $@
+
+webextension/%.lo : webextension/%.c
+	@echo " CC " $<
+	@${CC} -c ${EXTCFLAGS} -fPIC -c -o $@ $<
+
 clean:
 	@echo " RM " ${TARGET}
 	@rm -f ${TARGET}
-	@echo " RM " ${OBJ}
-	@rm -f ${OBJ}
+	@echo " RM " ${EXTTARGET}
+	@rm -f ${EXTTARGET}
+	@echo " RM " ${OBJ} ${EXTOBJ}
+	@rm -f ${OBJ} ${EXTOBJ}
 	@rm -rf obj/
 
 info:

@@ -18,6 +18,12 @@ struct {
       GtkLabel *info;
    } Statusbar;
 
+   struct {
+      glong max;
+      glong top;
+      guint percent;
+   } ScrollState;
+
    GdkKeymap            *keymap;
    GString              *buffer;
    gint                 mode;
@@ -27,6 +33,9 @@ struct {
    GList                *bookmarks;
    GList                *quickmarks;
    GList                *history;
+   GList                *active_downloads;
+   GList                *finished_downloads;
+   GList                *sessions;
 
 } Client;
 

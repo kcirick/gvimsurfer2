@@ -9,7 +9,7 @@
 #include "include/client.h"
 
 //--- Local variables -----
-static const gchar default_config_file[] = ".config/gvimsurfer2/configrc";
+static const gchar default_config_file[] = "configrc";
 gboolean mode_debug;
 
 #define CRED     "\x1b[31m"
@@ -36,7 +36,6 @@ gchar* shorten_text(gchar* orig, gint max_length){
 
    gchar* new_text = g_strdup_printf("%s", orig);
    if(strlen(orig) > max_length){
-      //new_text = g_strndup(orig, max_length);
       g_strlcpy(new_text, orig, max_length-3);
       g_strlcat(new_text, "...", max_length);
    } 
@@ -59,13 +58,13 @@ gint get_int_from_buffer(gchar* buffer){
 
 
 void say(gint level, gchar* message, gint exit_type) {
+   if(level==DEBUG && !mode_debug) return;
+
    gchar* coloured_type;
         if(level==ERROR)   coloured_type=g_strdup(CRED "ERROR" CRESET);
    else if(level==WARNING) coloured_type=g_strdup(CYELLOW "WARNING" CRESET);
    else if(level==DEBUG)   coloured_type=g_strdup(CPURPLE "DEBUG" CRESET);
    else                    coloured_type=g_strdup(CGREEN "INFO" CRESET);
-
-   if(level==DEBUG && !mode_debug) return;
 
    g_printf("%s [%s]:\t%s\n", NAME, coloured_type, message);
 
@@ -74,20 +73,17 @@ void say(gint level, gchar* message, gint exit_type) {
 }
 
 void notify(gint level, char* message) {
-   say(DEBUG, "notify", -1);
 
-   gboolean output_stderr = FALSE;
-   if(level==DEBUG) output_stderr=TRUE;
-
-   if(Client.UI.window && !output_stderr){
-      (level==ERROR || level==WARNING) ?
-         gtk_widget_set_state_flags (GTK_WIDGET(Client.Statusbar.message), GTK_STATE_FLAG_CHECKED, TRUE) :
-         gtk_widget_set_state_flags (GTK_WIDGET(Client.Statusbar.message), GTK_STATE_FLAG_NORMAL, TRUE); 
-
-      gtk_label_set_text((GtkLabel*) Client.Statusbar.message, message);
-   } else 
+   if(level==DEBUG){
       say(level, message, -1);
+      return;
+   }
 
+   (level==ERROR || level==WARNING) ?
+      gtk_widget_set_state_flags (GTK_WIDGET(Client.Statusbar.message), GTK_STATE_FLAG_CHECKED, TRUE) :
+      gtk_widget_set_state_flags (GTK_WIDGET(Client.Statusbar.message), GTK_STATE_FLAG_NORMAL, TRUE); 
+
+   gtk_label_set_text((GtkLabel*) Client.Statusbar.message, message);
 }
 
 void open_uri(WebKitWebView* wv, const gchar* uri){
@@ -196,6 +192,69 @@ void change_mode(gint mode) {
    gtk_label_set_text((GtkLabel*) Client.Statusbar.message, mode_text);
 }
 
+gboolean sessionsave(gchar* session_name) {
+   GString* session_uris = g_string_new("");
+
+   for (int i = 0; i < gtk_notebook_get_n_pages(Client.UI.notebook); i++) {
+
+      gchar* tab_uri   = g_strconcat(webkit_web_view_get_uri((WebKitWebView*)GET_NTH_PAGE(i)), " ", NULL);
+      session_uris     = g_string_append(session_uris, tab_uri);
+
+      g_free(tab_uri);
+   }
+
+   // Check for existing sessions
+   GList* se_list = Client.sessions;
+   while(se_list) {
+      Session* se = se_list->data;
+
+      if(g_strcmp0(se->name, session_name) == 0) {
+         g_free(se->uris);
+         se->uris = session_uris->str;
+
+         break;
+      }
+      se_list = g_list_next(se_list);
+   }
+
+   if(!se_list) {
+      Session* se = malloc(sizeof(Session));
+      se->name = g_strdup(session_name);
+      se->uris = session_uris->str;
+
+      Client.sessions = g_list_prepend(Client.sessions, se);
+   }
+
+   g_string_free(session_uris, FALSE);
+
+   return TRUE;
+
+}
+
+gboolean sessionload(gchar* session_name) {
+   GList* se_list = Client.sessions;
+   while(se_list) {
+      Session* se = se_list->data;
+
+      if(g_strcmp0(se->name, session_name) == 0) {
+         gchar** uris = g_strsplit(se->uris, " ", -1);
+         int     n    = g_strv_length(uris) - 1;
+
+         if(n <= 0)  return FALSE;
+
+         for(int i = 0; i < n; i++)
+            create_tab(uris[i], TRUE);
+
+         g_strfreev(uris);
+         return TRUE;
+      }
+      se_list = g_list_next(se_list);
+   }
+
+   return FALSE;
+}
+
+
 gboolean read_configuration(gchar* configrc) {
    if(!configrc) return FALSE;
    if(!g_file_test(configrc, G_FILE_TEST_IS_REGULAR)) return FALSE;
@@ -223,7 +282,6 @@ gboolean read_configuration(gchar* configrc) {
       if(!strcmp(id, "max_url_length"))   max_url_length = atoi(value);
 
       if(!strcmp(id, "full_content_zoom"))   full_content_zoom = strcmp(value, "false") ? TRUE : FALSE;
-      if(!strcmp(id, "show_statusbar"))      show_statusbar = strcmp(value, "false") ? TRUE : FALSE;
       if(!strcmp(id, "show_tabbar"))         show_tabbar = strcmp(value, "false") ? TRUE : FALSE;
       if(!strcmp(id, "strict_ssl"))          strict_ssl = strcmp(value, "false") ? TRUE : FALSE;
       if(!strcmp(id, "flash_block"))         fb_enabled = strcmp(value, "false") ? TRUE : FALSE;
@@ -237,14 +295,13 @@ gboolean read_configuration(gchar* configrc) {
       if(!strcmp(id, "scroll_step"))           scroll_step = atof(value);
 
       if(!strcmp(id, "download_dir")) download_dir = build_proper_path(value);
-      if(!strcmp(id, "config_dir"))   config_dir   = build_proper_path(value);
-      if(!strcmp(id, "bookmarks"))    bookmarks    = g_strconcat(config_dir, value, NULL);
-      if(!strcmp(id, "history"))      history      = g_strconcat(config_dir, value, NULL);
-      if(!strcmp(id, "cookies"))      cookies      = g_strconcat(config_dir, value, NULL);
-      if(!strcmp(id, "sessions"))     sessions     = g_strconcat(config_dir, value, NULL);
-      if(!strcmp(id, "stylesheet"))   stylesheet   = g_strconcat(config_dir, value, NULL);
-      if(!strcmp(id, "ui_css"))       ui_cssfile   = g_strconcat(config_dir, value, NULL);
-      //if(!strcmp(id, "scriptfile"))   load_script(g_strconcat(config_dir, value, NULL));
+      if(!strcmp(id, "bookmarks"))    bookmarks    = g_strconcat(CONFIGDIR, "/", value, NULL);
+      if(!strcmp(id, "history"))      history      = g_strconcat(CONFIGDIR, "/", value, NULL);
+      if(!strcmp(id, "cookies"))      cookies      = g_strconcat(CONFIGDIR, "/", value, NULL);
+      if(!strcmp(id, "sessions"))     sessions     = g_strconcat(CONFIGDIR, "/", value, NULL);
+      if(!strcmp(id, "stylesheet"))   stylesheet   = g_strconcat(CONFIGDIR, "/", value, NULL);
+      if(!strcmp(id, "ui_css"))       ui_cssfile   = g_strconcat(CONFIGDIR, "/", value, NULL);
+      //if(!strcmp(id, "scriptfile"))   load_script(g_strconcat(CONFIGDIR, value, NULL));
 
       // Search Engines
       if(!strcmp(id, "search_engine")){
@@ -290,7 +347,7 @@ int main(int argc, char* argv[]) {
 
    //--- read config file -----
    gchar* configfile= cfile ?
-      g_strdup(cfile): g_build_filename(g_get_home_dir(), default_config_file, NULL);
+      g_strdup(cfile): g_build_filename(CONFIGDIR, default_config_file, NULL);
 
    if(!read_configuration(configfile)) 
       say(ERROR, g_strdup_printf("Invalid configuration file: %s", configfile), EXIT_FAILURE);

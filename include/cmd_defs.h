@@ -6,7 +6,7 @@ static const Command commands[] = {
    {"back",       cmd_back,               0 },              // Go back in history
    {"forward",    cmd_forward,            0 },              // Go forward in history
    {"bmark",      cmd_bookmark,           cc_bookmarks},    // Add bookmark
-//  {"download",  cmd_handle_downloads,   cc_downloads},    // List (or cancel) active downloads
+   {"download",   cmd_handle_downloads,   cc_downloads},    // List (or cancel) active downloads
    {"qmark",      cmd_quickmark,          cc_quickmarks},   // Set quickmark
    {"open",       cmd_open,               cc_open },        // Open URI in current tab
 //  {"print",     cmd_print,              0 },              // Print page
@@ -17,7 +17,7 @@ static const Command commands[] = {
    {"reload",     cmd_reload,             0 },              // Reload current page
 //  {"saveas",   cmd_saveas,             0 },              // Save current document to disk
 //  {"script",   cmd_load_script,        0 },              // Load a javascript file
-//  {"session",  cmd_session,            cc_session },     // Save session with specified name
+   {"session",    cmd_session,            cc_session },     // Save session with specified name
 //  {"set",      cmd_settings,           cc_settings },    // Set an option
    {"stop",       cmd_stop,               0 },              // Stop loading the current page
    {"tabnew",     cmd_tabopen,            cc_open },        // Open URI in a new tab

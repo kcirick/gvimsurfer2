@@ -11,7 +11,6 @@
 
 #include "include/gvimsurfer2.h"
 #include "include/client.h"
-//#include "include/utilities.h"
 //#include "include/callbacks.h"
 #include "include/completion.h"
 #include "include/commands.h"
@@ -154,7 +153,7 @@ Completion* cc_open(gchar* input) {
    }
 
    //--- quickmarks -----
-   if(Client.bookmarks) {
+   if(Client.quickmarks) {
       CompletionGroup* quickmarks = cg_create("Quickmarks");
       completion->groups = g_list_append(completion->groups, quickmarks);
 
@@ -281,22 +280,22 @@ Completion* cc_quickmarks(gchar* input) {
    return completion;
 }
 
-/*
 Completion* cc_session(gchar* input) {
    Completion* completion = completion_init();
 
    CompletionGroup* group = cg_create("Sessions");
    completion->groups = g_list_append(completion->groups, group);
 
-   for(GList* l = Client.Global.sessions; l; l = g_list_next(l)) {
+   for(GList* l = Client.sessions; l; l = g_list_next(l)) {
       Session* se = (Session*)l->data;
 
       if(strstr(se->name, input))
-         cg_add_element(group, se->name, "");
+         cg_add_element(group, se->name, se->name, "");
    }
    return completion;
 }
 
+/*
 Completion* cc_settings(gchar* input) {
    Completion* completion = completion_init();
    
@@ -322,31 +321,60 @@ Completion* cc_settings(gchar* input) {
    }
    return completion;
 }
+*/
 
 Completion* cc_downloads(gchar* input) {
    Completion* completion = completion_init();
 
-   CompletionGroup* group = cg_create("Active Downloads");
-   completion->groups = g_list_append(completion->groups, group);
+   //--- active downloads
+   if(Client.active_downloads) {
+      CompletionGroup* group = cg_create("Active Downloads");
+      completion->groups = g_list_append(completion->groups, group);
+      
+      gint i=0;
+      for(GList* l = Client.active_downloads; l; l = g_list_next(l)) {
+         WebKitDownload* download = (WebKitDownload*) l->data;
+         g_assert(download);
 
-   for(int i=0; i<g_list_length(Client.Global.active_downloads); i++){
+         if(download){
+            //const gchar* filename = webkit_download_get_suggested_filename(this_download);
+            const gchar *filename = webkit_download_get_destination(download);
 
-      WebKitDownload* this_download = (WebKitDownload*)g_list_nth_data(Client.Global.active_downloads, i);
-      if(this_download){
-         const gchar* filename = webkit_download_get_suggested_filename(this_download);
+            gchar* istring = g_strdup_printf("%d",i);
+            gchar* text    = g_strdup_printf("%s - %.0f%% completed", filename, 100*webkit_download_get_estimated_progress(download));
+            //gchar* text = g_strdup("test");
 
-         gchar* istring = g_strdup_printf("%d",i);
-         gchar* text    = g_strdup_printf("%s - %.0f%% completed", filename, 100*webkit_download_get_progress(this_download));
+            if(strstr(istring, input))
+               cg_add_element(group, istring, istring, text);
 
-         if(strstr(istring, input))
-            cg_add_element(group, istring, text);
-
-         g_free(istring); g_free(text);
+            g_free(istring); g_free(text);
+         }
+         i+=1;
       }
    }
+
+   //--- finished downloads
+   if(Client.finished_downloads) {
+      CompletionGroup* group = cg_create("Finished Downloads");
+      completion->groups = g_list_append(completion->groups, group);
+      
+      gint i=0;
+      for(GList* l = Client.finished_downloads; l; l = g_list_next(l)) {
+
+         gchar* istring = g_strdup_printf("%d",i);
+         gchar* fname   = g_strdup(l->data);
+
+         if(strstr(istring, input))
+            cg_add_element(group, istring, istring, fname);
+
+         g_free(istring); g_free(fname);
+         i+=1;
+      }
+   }
+
    return completion;
 }
-*/
+
 void run_completion(gint arg) {
 
    gchar *input      = gtk_editable_get_chars(GTK_EDITABLE(Client.UI.inputbar), 0, -1);

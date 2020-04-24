@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <regex.h>
@@ -14,6 +15,7 @@
 #include "include/commands.h"
 #include "include/sc_defs.h"
 #include "include/cmd_defs.h"
+#include "include/dbus_proxy.h"
 
 
 static gint static_page_id;
@@ -50,6 +52,15 @@ gboolean cb_notebook_keypress(GtkWidget* widget, GdkEventKey* event, gpointer da
    gdk_keymap_translate_keyboard_state(Client.keymap, event->hardware_keycode, 
          event->state, event->group, &keyval, NULL, NULL, &irrelevant);
 
+   if(keyval == GDK_KEY_BackSpace){
+      say(DEBUG, "BS pressed in cb_notebook_keypress", -1);
+      if(Client.buffer->len>0){
+         Client.buffer = g_string_erase(Client.buffer, (Client.buffer->len)-1, 1);
+         gtk_label_set_text((GtkLabel*) Client.Statusbar.message, Client.buffer->str);
+      } 
+      return TRUE;
+   }
+   
    for(guint i=0; i<LENGTH(shortcuts); i++){
       regex_t regex;
       Shortcut* sc = (Shortcut*)&shortcuts[i];
@@ -178,6 +189,16 @@ gboolean cb_inputbar_activate(GtkEntry* entry, gpointer data) {
 
 
 //--- webview callbacks ---
+GtkWidget* cb_wv_create_webview(WebKitWebView* wv, gpointer data) {
+   return create_tab(webkit_web_view_get_uri(wv), TRUE);
+}
+
+gboolean cb_wv_update(WebKitWebView* wv, gpointer data) {
+   update_client(gtk_notebook_get_current_page(Client.UI.notebook));
+
+   return TRUE;
+}
+
 gboolean cb_wv_load_status(WebKitWebView* wv, WebKitLoadEvent load_event, gpointer user_data){
 
       //WebKitLoadStatus status = webkit_web_view_get_load_status(wv);
@@ -223,4 +244,141 @@ gboolean cb_wv_load_status(WebKitWebView* wv, WebKitLoadEvent load_event, gpoint
       return TRUE;
 }
 
+gboolean cb_wv_notify_title(WebKitWebView* wv, GParamSpec* pspec, gpointer data) {
+   if(webkit_web_view_get_title(wv)) 
+      update_client(gtk_notebook_get_current_page(Client.UI.notebook));
 
+   return TRUE;
+}
+
+//gboolean cb_wv_scrolled(GtkAdjustment* adjustment, gpointer data) {
+//   say(DEBUG, "cb_wv_scrolled", -1);
+//   //update_statusbar_info(gtk_notebook_get_current_page(Client.UI.webview));
+//   
+//   return TRUE;
+//}
+
+
+//--- webcontext abd download signals ---
+gboolean cb_wc_download_started(WebKitWebContext* wc, WebKitDownload* download, gpointer data) {
+   
+   g_signal_connect(download, "decide-destination",   G_CALLBACK(cb_download_decide_destination), NULL);
+   g_signal_connect(download, "failed",               G_CALLBACK(cb_download_failed), NULL);
+   g_signal_connect(download, "finished",             G_CALLBACK(cb_download_finished), NULL);
+   //g_signal_connect(download, "received-data",        G_CALLBACK(cb_download_received_data), NULL);
+
+   Client.active_downloads = g_list_append(Client.active_downloads, download);
+
+   return TRUE;
+}
+
+gboolean cb_download_decide_destination(WebKitDownload* download, gchar* suggested_filename, gpointer data) {
+   if (webkit_download_get_destination(download)) return TRUE;
+
+   gchar* filename = suggested_filename ? suggested_filename : "download";
+   gchar* download_path = g_strconcat(download_dir, filename, NULL);
+   gchar* download_uri  = g_filename_to_uri(download_path, NULL, NULL);
+
+   webkit_download_set_destination(download, download_uri);
+   notify(INFO, g_strdup_printf("Download %s started ...", filename));
+   
+   g_free(filename);
+   g_free(download_path);
+   g_free(download_uri);
+
+   return TRUE;
+}
+
+gboolean cb_download_failed(WebKitDownload* download, GError *error, gpointer data){
+   gchar *destination=NULL, *filename=NULL, *basename=NULL;
+
+   g_assert(download);
+
+   g_object_get(download, "destination", &destination, NULL);
+   g_assert(destination);
+
+   filename = g_filename_from_uri(destination, NULL, NULL);
+   basename = g_path_get_basename(filename);
+   
+   if(basename) {
+      notify(ERROR, g_strdup_printf("Download %s failed (%s)", basename, error->message));
+      g_free(basename);
+   }
+
+   g_free(destination);
+   g_free(filename);
+
+   return TRUE;
+}
+
+gboolean cb_download_finished(WebKitDownload* download, gpointer data){
+   gchar *destination=NULL, *filename=NULL, *basename=NULL;
+
+   g_assert(download);
+
+   g_object_get(download, "destination", &destination, NULL);
+   g_assert(destination);
+
+   filename = g_filename_from_uri(destination, NULL, NULL);
+   basename = g_path_get_basename(filename);
+   
+   if(basename) {
+      notify(INFO, g_strdup_printf("Download %s finished", basename));
+
+      Client.active_downloads    = g_list_remove(Client.active_downloads, download);
+      Client.finished_downloads  = g_list_append(Client.finished_downloads, g_strdup(basename));
+      
+      g_free(basename);
+   }
+
+   g_free(destination);
+   g_free(filename);
+
+   return TRUE;
+}
+
+gboolean cb_download_progress(WebKitDownload* d, GParamSpec* pspec){
+   /*
+   WebKitDownloadStatus status = webkit_download_get_status(d);
+   const gchar* filename = webkit_download_get_suggested_filename(d);
+
+   if (status != WEBKIT_DOWNLOAD_STATUS_STARTED && status != WEBKIT_DOWNLOAD_STATUS_CREATED) {
+      if (status == WEBKIT_DOWNLOAD_STATUS_FINISHED)
+         notify(INFO, g_strdup_printf("Download %s finished", filename));
+      if (status == WEBKIT_DOWNLOAD_STATUS_ERROR)
+         notify(ERROR, g_strdup_printf("Error while downloading %s", filename));
+      if (status == WEBKIT_DOWNLOAD_STATUS_CANCELLED)
+         notify(ERROR, g_strdup_printf("Cancelled downloading %s", filename));
+
+      //Client.downloads = g_list_remove(Client.downloads, d);
+   }
+   */
+
+   update_statusbar_info(gtk_notebook_get_current_page(Client.UI.notebook));
+   return TRUE;
+}
+
+gboolean cb_wc_init_webext(WebKitWebContext* wc, gpointer data){
+   
+   say(DEBUG, "cb_wc_init_webext", -1);
+
+   char *extension = g_build_filename(EXTENSIONDIR,  "webext.so", NULL);
+   if (!g_file_test(extension, G_FILE_TEST_IS_REGULAR)) {
+      say(ERROR, "Cannot access web extension", EXIT_FAILURE);
+   }
+   g_free(extension);
+
+   // connect d-bus proxy
+   const gchar *name;
+   GVariant *vdata;
+
+   name = dbus_proxy_init();
+   vdata = g_variant_new("(ms)", name);
+   webkit_web_context_set_web_extensions_initialization_user_data(wc, vdata);
+
+   // Setup the extension directory.
+   webkit_web_context_set_web_extensions_directory(wc, EXTENSIONDIR);
+
+   return TRUE;
+
+}
