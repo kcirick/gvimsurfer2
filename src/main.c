@@ -171,6 +171,7 @@ void search_and_highlight(gboolean direction, gchar* token) {
 
 void change_mode(gint mode) {
    say(DEBUG, "change_mode", -1);
+   /*
    gchar* mode_text = NULL;
 
    switch(mode) {
@@ -190,6 +191,7 @@ void change_mode(gint mode) {
    }
    Client.mode = mode;
    gtk_label_set_text((GtkLabel*) Client.Statusbar.message, mode_text);
+   */
 }
 
 gboolean sessionsave(gchar* session_name) {
@@ -242,10 +244,13 @@ gboolean sessionload(gchar* session_name) {
 
          if(n <= 0)  return FALSE;
 
-         for(int i = 0; i < n; i++)
+         for(int i = 0; i < n; i++){
+            say(DEBUG, uris[i], -1);
             create_tab(uris[i], TRUE);
+         }
 
          g_strfreev(uris);
+         say(DEBUG, "here", -1);
          return TRUE;
       }
       se_list = g_list_next(se_list);

@@ -250,7 +250,9 @@ gboolean cmd_session(int argc, char** argv) {
    else if(strcmp(argv[0], "load")==0)
       to_return = sessionload(session_name);
 
-   g_free(session_name);
+   //g_free(session_name);
+
+   //say(DEBUG, "here 10", -1);
 
    return to_return;
 }
