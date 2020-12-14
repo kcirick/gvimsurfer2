@@ -262,6 +262,8 @@ gboolean cb_wv_notify_title(WebKitWebView* wv, GParamSpec* pspec, gpointer data)
 //--- webcontext abd download signals ---
 gboolean cb_wc_download_started(WebKitWebContext* wc, WebKitDownload* download, gpointer data) {
    
+   say(DEBUG, "cb_wc_download_started", -1);
+
    g_signal_connect(download, "decide-destination",   G_CALLBACK(cb_download_decide_destination), NULL);
    g_signal_connect(download, "failed",               G_CALLBACK(cb_download_failed), NULL);
    g_signal_connect(download, "finished",             G_CALLBACK(cb_download_finished), NULL);
@@ -273,6 +275,9 @@ gboolean cb_wc_download_started(WebKitWebContext* wc, WebKitDownload* download, 
 }
 
 gboolean cb_download_decide_destination(WebKitDownload* download, gchar* suggested_filename, gpointer data) {
+
+   say(DEBUG, "cb_wc_download_decide_destination", -1);
+   
    if (webkit_download_get_destination(download)) return TRUE;
 
    gchar* filename = suggested_filename ? suggested_filename : "download";
@@ -281,8 +286,9 @@ gboolean cb_download_decide_destination(WebKitDownload* download, gchar* suggest
 
    webkit_download_set_destination(download, download_uri);
    notify(INFO, g_strdup_printf("Download %s started ...", filename));
-   
-   g_free(filename);
+   say(INFO, g_strdup_printf("Download %s started ...", download_uri), -1);
+
+   //g_free(filename);
    g_free(download_path);
    g_free(download_uri);
 
@@ -290,6 +296,8 @@ gboolean cb_download_decide_destination(WebKitDownload* download, gchar* suggest
 }
 
 gboolean cb_download_failed(WebKitDownload* download, GError *error, gpointer data){
+   say(DEBUG, "cb_wc_download_failed", -1);
+
    gchar *destination=NULL, *filename=NULL, *basename=NULL;
 
    g_assert(download);
@@ -302,6 +310,7 @@ gboolean cb_download_failed(WebKitDownload* download, GError *error, gpointer da
    
    if(basename) {
       notify(ERROR, g_strdup_printf("Download %s failed (%s)", basename, error->message));
+      say(ERROR, g_strdup_printf("Download %s failed (%s)", basename, error->message), -1);
       g_free(basename);
    }
 
@@ -312,6 +321,8 @@ gboolean cb_download_failed(WebKitDownload* download, GError *error, gpointer da
 }
 
 gboolean cb_download_finished(WebKitDownload* download, gpointer data){
+   say(DEBUG, "cb_wc_download_finished", -1);
+
    gchar *destination=NULL, *filename=NULL, *basename=NULL;
 
    g_assert(download);
@@ -338,6 +349,7 @@ gboolean cb_download_finished(WebKitDownload* download, gpointer data){
 }
 
 gboolean cb_download_progress(WebKitDownload* d, GParamSpec* pspec){
+   say(DEBUG, "cb_wc_download_progress", -1);
    /*
    WebKitDownloadStatus status = webkit_download_get_status(d);
    const gchar* filename = webkit_download_get_suggested_filename(d);
