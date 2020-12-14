@@ -9,6 +9,8 @@
 #include "include/callbacks.h"
 #include "include/completion.h"
 
+struct my_Client Client;
+
 // --- local function declarations ---
 GtkWidget * create_notebook_label(const gchar*, GtkWidget*, gint);
 void        init_client_data();

@@ -2,7 +2,7 @@
 #define CLIENT_H
 
 //--- the main client -----
-struct {
+struct my_Client {
    struct {
       GtkWidget      *window;
       GtkBox         *box;
@@ -37,7 +37,9 @@ struct {
    GList                *finished_downloads;
    GList                *sessions;
 
-} Client;
+};
+
+extern struct my_Client Client;
 
 //--- functions -----
 void        init_client();

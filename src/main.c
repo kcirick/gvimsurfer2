@@ -8,6 +8,35 @@
 #include "include/gvimsurfer2.h"
 #include "include/client.h"
 
+gboolean private_mode;
+
+gint   default_width;
+gint   default_height;
+gint   max_title_length;
+gint   max_url_length;
+
+gboolean fb_enabled;
+gboolean full_content_zoom;
+gboolean show_tabbar;
+gboolean strict_ssl; 
+
+gchar* user_agent;
+gchar* home_page;
+
+gint n_completion_items;
+gint history_limit;
+gfloat zoom_step;
+gfloat scroll_step;
+
+gchar* download_dir;
+gchar* bookmarks;
+gchar* history;
+gchar* cookies;
+gchar* sessions;
+gchar* stylesheet;
+gchar* scriptfile;
+gchar* ui_cssfile;
+
 //--- Local variables -----
 static const gchar default_config_file[] = "configrc";
 gboolean mode_debug;

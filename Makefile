@@ -9,7 +9,7 @@ OBJ  		= $(addprefix obj/,$(notdir $(SRC:.c=.o)))
 #CONFIG	= $(wildcard config/*.h)
 
 EXTTARGET      = webext.so
-EXTENSIONDIR   = $(PREFIX)/local/lib/gvimsurfer2
+EXTENSIONDIR   = /home/rueno/.local/lib/gvimsurfer2
 EXTSRC         = $(wildcard webextension/*.c)
 EXTOBJ         = $(EXTSRC:.c=.lo)
 

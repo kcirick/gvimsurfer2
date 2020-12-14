@@ -45,35 +45,35 @@ typedef struct {
 } Session;
 
 //--- variables -----
-gboolean private_mode;
+extern gboolean private_mode;
 
 //--- configuration variables -----
-gint   default_width;
-gint   default_height;
-gint   max_title_length;
-gint   max_url_length;
+extern gint   default_width;
+extern gint   default_height;
+extern gint   max_title_length;
+extern gint   max_url_length;
 
-gboolean fb_enabled;
-gboolean full_content_zoom;
-gboolean show_tabbar;
-gboolean strict_ssl; 
+extern gboolean fb_enabled;
+extern gboolean full_content_zoom;
+extern gboolean show_tabbar;
+extern gboolean strict_ssl; 
 
-gchar* user_agent;
-gchar* home_page;
+extern gchar* user_agent;
+extern gchar* home_page;
 
-gint n_completion_items;
-gint history_limit;
-gfloat zoom_step;
-gfloat scroll_step;
+extern gint n_completion_items;
+extern gint history_limit;
+extern gfloat zoom_step;
+extern gfloat scroll_step;
 
-gchar* download_dir;
-gchar* bookmarks;
-gchar* history;
-gchar* cookies;
-gchar* sessions;
-gchar* stylesheet;
-gchar* scriptfile;
-gchar* ui_cssfile;
+extern gchar* download_dir;
+extern gchar* bookmarks;
+extern gchar* history;
+extern gchar* cookies;
+extern gchar* sessions;
+extern gchar* stylesheet;
+extern gchar* scriptfile;
+extern gchar* ui_cssfile;
 
 //--- functions -----
 void     say(gint, gchar*, gint);
