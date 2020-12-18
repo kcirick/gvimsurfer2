@@ -189,8 +189,11 @@ gboolean cb_inputbar_activate(GtkEntry* entry, gpointer data) {
 
 
 //--- webview callbacks ---
-GtkWidget* cb_wv_create_webview(WebKitWebView* wv, gpointer data) {
-   return create_tab(webkit_web_view_get_uri(wv), TRUE);
+GtkWidget* cb_wv_create_webview(WebKitWebView* wv, WebKitNavigationAction *na, gpointer data) {
+   
+   WebKitURIRequest *req = webkit_navigation_action_get_request(na);
+
+   return create_tab((char*)webkit_uri_request_get_uri(req), TRUE);
 }
 
 gboolean cb_wv_update(WebKitWebView* wv, gpointer data) {

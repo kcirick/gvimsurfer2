@@ -14,7 +14,7 @@ gboolean    cb_button_close_tab(GtkButton*, GtkNotebook*);
 gboolean    cb_inputbar_keypress(GtkWidget*, GdkEventKey*, gpointer);
 gboolean    cb_inputbar_activate(GtkEntry*, gpointer);
 
-GtkWidget*  cb_wv_create_webview(WebKitWebView*, gpointer);
+GtkWidget*  cb_wv_create_webview(WebKitWebView*, WebKitNavigationAction*, gpointer);
 gboolean    cb_wv_update(WebKitWebView* wv, gpointer data);
 gboolean    cb_wv_load_status(WebKitWebView*, WebKitLoadEvent, gpointer);
 gboolean    cb_wv_notify_title(WebKitWebView*, GParamSpec*, gpointer);
